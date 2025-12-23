@@ -7,13 +7,13 @@ from typing import Optional
 import uvicorn
 import os
 
-# Import engine (placeholder for now)
+# Import engine
 try:
     from engine import AIEngine
 except ImportError:
-    # Fallback if engine.py is not yet ready or dependencies missing
+    print("WARNING: engine.py import failed. Running in mock mode.")
     class AIEngine:
-        def generate(self, prompt):
+        def generate(self, prompt, **kwargs):
             return {"status": "mocked", "prompt": prompt}
 
 app = FastAPI(title="Fast3dPrint API")
@@ -21,25 +21,32 @@ app = FastAPI(title="Fast3dPrint API")
 # Allow CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify the frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Mount the generated_models directory to serve static files
+os.makedirs("generated_models", exist_ok=True)
+app.mount("/static", StaticFiles(directory="generated_models"), name="static")
+
+# Initialize Engine Global
 engine = AIEngine()
 
 class GenerateRequest(BaseModel):
     prompt: str
+    steps: Optional[int] = 64
+    guidance: Optional[float] = 15.0
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "message": "Fast3dPrint Backend is running"}
+    return {"status": "online", "message": "Fast3dPrint Backend is running with Shap-E"}
 
 @app.post("/generate")
 def generate_model(request: GenerateRequest):
     try:
-        result = engine.generate(request.prompt)
+        result = engine.generate(request.prompt, steps=request.steps, guidance_scale=request.guidance)
         return {"result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -50,7 +57,7 @@ def generate_from_image(
     back_image: Optional[UploadFile] = File(None)
 ):
     try:
-        # Mock processing
+        # TODO: Implement Image-to-3D pipeline
         return {
             "status": "success",
             "front_image": front_image.filename,

@@ -5,3 +5,5 @@ diffusers
 transformers
 accelerate
 numpy
+trimesh
+scipy
