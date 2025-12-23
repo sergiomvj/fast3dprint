@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ .
 
 # Copy Frontend Build to a 'static' folder in Backend
-COPY --from=frontend-builder /frontend/dist /app/static
+COPY --from=frontend-builder /frontend/dist /app/static_ui
 
 EXPOSE 8000
 
